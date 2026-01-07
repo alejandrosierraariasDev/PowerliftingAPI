@@ -4,4 +4,3 @@ pydantic
 requests
 pytest
 httpx
-RedirectResponse
