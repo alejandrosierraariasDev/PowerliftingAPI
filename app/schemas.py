@@ -1,16 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-
-# Definimos el esquema para los récords (Lifts, Stats, etc.)
-class Record(BaseModel):
-    # Usamos dict para que sea flexible (NBA, UFC, Powerlifting)
-    data: Dict[str, Any]
-
-# Este es el que te está dando el error de importación
-class LiftCreate(BaseModel):
-    exercise: str
-    weight_kg: float
-    reps: int
+from pydantic import BaseModel
+from typing import List, Dict, Any
 
 class AthleteBase(BaseModel):
     name: str
@@ -28,3 +17,7 @@ class Athlete(AthleteBase):
 
     class Config:
         from_attributes = True
+
+# For the endpoint to add records individually
+class RecordUpdate(BaseModel):
+    data: Dict[str, Any]
