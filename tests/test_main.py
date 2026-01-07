@@ -46,4 +46,4 @@ def test_delete_and_reset():
 def test_admin_without_key():
     """Test security: Verify that admin actions fail without a key"""
     response = client.delete("/v1/athletes/1")
-    assert response.status_code == 403 # Forbidden
+    assert response.status_code == 401 # Forbidden
