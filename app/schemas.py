@@ -1,5 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any
+
+
+class Lift(BaseModel):
+    # Modern Pydantic V2 way to add examples
+    exercise: str = Field(..., json_schema_extra={"example": "Squat"})
+    weight_kg: float = Field(..., json_schema_extra={"example": 300.0})
+    reps: int = Field(..., json_schema_extra={"example": 1})
+
 
 class AthleteBase(BaseModel):
     name: str
@@ -8,16 +16,14 @@ class AthleteBase(BaseModel):
     country: str
     achievements: List[str] = []
 
+
 class AthleteCreate(AthleteBase):
     pass
 
+
 class Athlete(AthleteBase):
     id: int
-    records: List[Dict[str, Any]] = []
+    records: List[Lift] = []
 
-    class Config:
-        from_attributes = True
-
-# For the endpoint to add records individually
-class RecordUpdate(BaseModel):
-    data: Dict[str, Any]
+    # Modern way to enable ORM mode/from_attributes
+    model_config = ConfigDict(from_attributes=True)

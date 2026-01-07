@@ -83,7 +83,6 @@ DEFAULT_DATA = [
     }
 ]
 
-# Estado actual de la App
 db_athletes = copy.deepcopy(DEFAULT_DATA)
 
 def reload_defaults():
