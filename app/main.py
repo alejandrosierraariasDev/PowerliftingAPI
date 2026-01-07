@@ -1,23 +1,13 @@
-from fastapi import FastAPI, HTTPException, status, Query
+import os
+from fastapi import FastAPI, HTTPException, status, Query,Security, Depends
 from typing import List
 from app.schemas import Athlete, AthleteCreate
 from app.database import db_athletes, reload_defaults
 from fastapi.responses import RedirectResponse
-"""
-app = FastAPI(
-    title="Powerlifting Legends API",
-    description=
-    "API specialized in Powerlifting athletes and their records."
-   ,
-    version="1.2.0",
-    contact={
-        "name": "Alejandro Sierra",
-        "url": "https://github.com/alejandrosierraariasDev",
-        "email": "alejandrosierraarias@gmail.com",
-    }
+from fastapi.security.api_key import APIKeyHeader
+from dotenv import load_dotenv
+load_dotenv()
 
-)
-"""
 app = FastAPI(
     title="Powerlifting API",
     description="""
@@ -38,11 +28,29 @@ It features automated nightly resets and a full CI/CD pipeline.
 )
 
 
+# --- AUTHENTICATION ---
 
-# --- QUERIES ---
+API_KEY_NAME = "X-API-KEY"
+API_KEY = os.getenv("ADMIN_API_KEY", "dev_key")
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+async def get_api_key(api_key: str = Security(api_key_header)):
+    if api_key == API_KEY:
+        return api_key
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Acceso denegado: API Key inválida"
+    )
+
+# --- SYSTEM ---
+@app.get("/health", tags=["System"])
+async def health_check():
+    return {"status": "healthy", "database": "connected", "records": len(db_athletes)}
+
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="/docs")
+
+# --- QUERIES ---
 
 @app.get("/v1/athletes", response_model=List[Athlete], tags=["Athletes"])
 async def get_all_athletes():
@@ -83,7 +91,7 @@ async def create_athlete(athlete_data: AthleteCreate):
     db_athletes.append(new_athlete)
     return new_athlete
 
-@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"])
+@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"],dependencies=[Depends(get_api_key)])
 async def delete_athlete(athlete_id: int):
     """Remove an athlete from the database"""
     global db_athletes
