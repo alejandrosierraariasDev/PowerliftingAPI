@@ -1,14 +1,16 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Union, Dict, Any
+from typing import List, Optional, Dict, Any
 
+# Definimos el esquema para los récords (Lifts, Stats, etc.)
 class Record(BaseModel):
-    # Usamos Dict[str, Any] para permitir tanto {"exercise": "...", "weight_kg": ...}
-    # como {"stat": "...", "value": ...}
+    # Usamos dict para que sea flexible (NBA, UFC, Powerlifting)
     data: Dict[str, Any]
 
-    # Esto permite que Pydantic acepte diccionarios flexibles
-    class Config:
-        extra = "allow"
+# Este es el que te está dando el error de importación
+class LiftCreate(BaseModel):
+    exercise: str
+    weight_kg: float
+    reps: int
 
 class AthleteBase(BaseModel):
     name: str
@@ -22,7 +24,7 @@ class AthleteCreate(AthleteBase):
 
 class Athlete(AthleteBase):
     id: int
-    records: List[Dict[str, Any]] = [] # Flexible para tus distintos deportes
+    records: List[Dict[str, Any]] = []
 
     class Config:
         from_attributes = True
