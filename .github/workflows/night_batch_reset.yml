@@ -1,0 +1,13 @@
+name: Nightly Reset
+on:
+  schedule:
+    - cron: '0 0 * * *' # 12 AM cada noche
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Reset
+        run: |
+          curl -X GET ${{ secrets.RENDER_DEPLOY_HOOK_PRO }}
