@@ -2,14 +2,47 @@ from fastapi import FastAPI, HTTPException, status, Query
 from typing import List
 from app.schemas import Athlete, AthleteCreate
 from app.database import db_athletes, reload_defaults
-
+from fastapi.responses import RedirectResponse
+"""
 app = FastAPI(
     title="Powerlifting Legends API",
-    description="API specialized in IPF Powerlifting athletes and their records",
+    description=
+    "API specialized in Powerlifting athletes and their records."
+   ,
+    version="1.2.0",
+    contact={
+        "name": "Alejandro Sierra",
+        "url": "https://github.com/alejandrosierraariasDev",
+        "email": "alejandrosierraarias@gmail.com",
+    }
+
+)
+"""
+app = FastAPI(
+    title="Powerlifting API",
+    description="""
+### 👤 Author Information
+* **Name:** Alejandro Sierra
+* **Portfolio:** [ GitHub](https://github.com/alejandrosierraariasDev)
+* **Email:** [alejandrosierraarias@gmail.com](mailto:alejandrosierraarias@gmail.com)
+
+### 📖 About this API
+This is a specialized API for **IPF Powerlifting** athletes and their world records. 
+It features automated nightly resets and a full CI/CD pipeline.
+
+**Quick Links:**
+* [View JSON Athletes List](/v1/athletes)
+---
+    """,
     version="1.2.0"
 )
 
+
+
 # --- QUERIES ---
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 @app.get("/v1/athletes", response_model=List[Athlete], tags=["Athletes"])
 async def get_all_athletes():

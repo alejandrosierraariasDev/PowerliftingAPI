@@ -14,6 +14,14 @@
 
  ![Swagger UI](assets/swagger.png)
 
+## Key features
+
+- Professional API with FastAPI.
+- Clean, typed code with Pydantic v2.
+- Database with auto-reset capability.
+- CI/CD (Continuous Integration and Deployment) in place.
+- Automated tests that ensure nothing breaks.
+
 
  ---
 
@@ -135,6 +143,8 @@
  - Define required variables/secrets (e.g. `RENDER_DEPLOY_HOOK`, `RENDER_DEPLOY_HOOK_PRO`).
 
  ---
+
+> The API "sleeps" after 15 minutes of inactivity. The first time you open Swagger each day, it may take 30 seconds to load. This is not an error; Render is just waking your server.
 
  ## 📜 License
 
