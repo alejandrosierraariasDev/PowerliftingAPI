@@ -1,0 +1,46 @@
+name: Powerlifting API CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * *' # Reset nightly at 12 AM
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pytest
+        # We set PYTHONPATH so it finds the 'app' folder correctly
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python -m pytest
+
+  deploy:
+    name: Deploy to Render
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+
+    steps:
+      - name: Deploy to PRE-PROD (Develop branch or Schedule)
+        if: github.ref == 'refs/heads/develop' || github.event_name == 'schedule'
+        run: curl -s ${{ secrets.RENDER_DEPLOY_HOOK_PRE }} > /dev/null
+
+      - name: Deploy to PROD (Main branch)
+        if: github.ref == 'refs/heads/main'
+        run: curl -s ${{ secrets.RENDER_DEPLOY_HOOK_PRO }} > /dev/null

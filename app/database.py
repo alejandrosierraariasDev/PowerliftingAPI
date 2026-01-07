@@ -1,79 +1,90 @@
-# Lista de atletas por defecto (tus 5 favoritos)
 import copy
+
 DEFAULT_DATA = [
     {
         "id": 1,
         "name": "Jesus Olivares",
         "category": "120kg+",
+        "age": 28,
+        "country": "USA",
+        "achievements": [
+            "IPF World Champion",
+            "Raw World Record Squat"
+        ],
         "records": [
             {"exercise": "Squat", "weight_kg": 470, "reps": 1},
-            {"exercise": "Bench Press", "weight_kg": 270, "reps": 2},
+            {"exercise": "Bench Press", "weight_kg": 270, "reps": 1},
             {"exercise": "Deadlift", "weight_kg": 430, "reps": 1}
-        ],
-        "achievements": ["Raw World Record Squat", "IPF World Championship Medalist"],
-        "age": 28,
-        "country": "USA"
+        ]
     },
     {
         "id": 2,
-        "name": "LeBron James",
-        "category": "NBA",
-        "records": [
-            {"stat": "Points Per Game", "value": 27.0},
-            {"stat": "Assists Per Game", "value": 7.4},
-            {"stat": "Rebounds Per Game", "value": 7.4}
+        "name": "Ray Williams",
+        "category": "120kg+",
+        "age": 37,
+        "country": "USA",
+        "achievements": [
+            "Multiple IPF World Champion",
+            "First Raw 490kg Squat"
         ],
-        "achievements": ["4× NBA Champion", "4× NBA MVP", "17× All-Star"],
-        "age": 38,
-        "country": "USA"
+        "records": [
+            {"exercise": "Squat", "weight_kg": 490, "reps": 1},
+            {"exercise": "Bench Press", "weight_kg": 250, "reps": 1},
+            {"exercise": "Deadlift", "weight_kg": 380, "reps": 1}
+        ]
     },
     {
         "id": 3,
-        "name": "Jon Jones",
-        "category": "UFC",
-        "records": [
-            {"stat": "Wins", "value": 27},
-            {"stat": "Losses", "value": 1},
-            {"stat": "Knockouts", "value": 10},
-            {"stat": "Submissions", "value": 6}
+        "name": "Russel Orhii",
+        "category": "83kg",
+        "age": 30,
+        "country": "USA",
+        "achievements": [
+            "IPF World Champion",
+            "USAPL National Champion"
         ],
-        "achievements": ["UFC Light Heavyweight Champion", "Most Title Defenses in UFC History"],
-        "age": 35,
-        "country": "USA"
+        "records": [
+            {"exercise": "Squat", "weight_kg": 335, "reps": 1},
+            {"exercise": "Bench Press", "weight_kg": 210, "reps": 1},
+            {"exercise": "Deadlift", "weight_kg": 365, "reps": 1}
+        ]
     },
     {
         "id": 4,
-        "name": "Lasha Talakhadze",
-        "category": "Weightlifting",
-        "records": [
-            {"exercise": "Snatch", "weight_kg": 225, "reps": 1},
-            {"exercise": "Clean & Jerk", "weight_kg": 267, "reps": 1},
-            {"exercise": "Total", "weight_kg": 492, "reps": 1}
+        "name": "Taylor Atwood",
+        "category": "74kg",
+        "age": 35,
+        "country": "USA",
+        "achievements": [
+            "Multiple IPF World Champion",
+            "World Record Total (74kg)"
         ],
-        "achievements": ["Olympic Gold Medalist 2016 & 2020", "Multiple World Records"],
-        "age": 28,
-        "country": "Georgia"
+        "records": [
+            {"exercise": "Squat", "weight_kg": 303, "reps": 1},
+            {"exercise": "Bench Press", "weight_kg": 205, "reps": 1},
+            {"exercise": "Deadlift", "weight_kg": 335, "reps": 1}
+        ]
     },
     {
         "id": 5,
-        "name": "Amanda Nunes",
-        "category": "UFC",
-        "records": [
-            {"stat": "Wins", "value": 23},
-            {"stat": "Losses", "value": 5},
-            {"stat": "Knockouts", "value": 13},
-            {"stat": "Submissions", "value": 4}
+        "name": "Jamila Jamal",
+        "category": "84kg+",
+        "age": 33,
+        "country": "USA",
+        "achievements": [
+            "IPF World Champion",
+            "World Record Deadlift"
         ],
-        "achievements": ["UFC Bantamweight Champion", "UFC Featherweight Champion", "First Woman to Hold Two Titles Simultaneously"],
-        "age": 35,
-        "country": "Brazil"
+        "records": [
+            {"exercise": "Squat", "weight_kg": 275, "reps": 1},
+            {"exercise": "Bench Press", "weight_kg": 170, "reps": 1},
+            {"exercise": "Deadlift", "weight_kg": 260, "reps": 1}
+        ]
     }
 ]
 
-# Esta es nuestra "Base de datos" en memoria
-db_athletes = list(DEFAULT_DATA)
+db_athletes = copy.deepcopy(DEFAULT_DATA)
 
 def reload_defaults():
     global db_athletes
-    # deepcopy asegura que los objetos anidados (listas de records) también sean nuevos
     db_athletes[:] = copy.deepcopy(DEFAULT_DATA)
