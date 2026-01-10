@@ -18,15 +18,26 @@ def test_get_all_athletes():
 
 def test_create_athlete_success():
     """Verifica que se puede crear un atleta con la llave correcta"""
-    new_athlete = {"name": "Lasha Talakhadze", "category": "109kg+", "total": 488}
+    new_athlete = {
+        "name": "Lasha Talakhadze",
+        "category": "109kg+",
+        "age": 30,
+        "country": "Georgia",
+        "achievements": ["Olympic Gold 2020"]
+    }
     response = client.post("/v1/athletes", json=new_athlete, headers=HEADERS)
     assert response.status_code == 201
     assert response.json()["name"] == "Lasha Talakhadze"
 
 
 def test_create_athlete_unauthorized():
-    """Verifica que falla la creación sin llave"""
-    new_athlete = {"name": "Fake", "category": "100kg", "total": 100}
+    new_athlete = {
+        "name": "Lasha Talakhadze",
+        "category": "109kg+",
+        "age": 30,
+        "country": "Georgia",
+        "achievements": ["Olympic Gold 2020"]
+    }
     response = client.post("/v1/athletes", json=new_athlete)  # Sin headers
     assert response.status_code == 401
 
