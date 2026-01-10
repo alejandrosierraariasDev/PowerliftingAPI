@@ -8,9 +8,23 @@ from fastapi.responses import RedirectResponse
 from fastapi.security.api_key import APIKeyHeader
 from dotenv import load_dotenv
 from fastapi.openapi.utils import get_openapi
+from contextlib import asynccontextmanager
+
 load_dotenv()
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    openapi_schema = get_openapi(
+        title="Powerlifting API",
+        version="1.0.0",
+        description="API for managing athletes and records",
+        routes=app.routes,
+    )
+    with open("app/contracts/openapi.json", "w") as f:
+        json.dump(openapi_schema, f, indent=2)
+    yield
 
 app = FastAPI(
     title="Powerlifting API",
@@ -31,16 +45,6 @@ It features automated nightly resets and a full CI/CD pipeline.
     version="1.2.0"
 )
 
-@app.on_event("startup")
-def generate_openapi_contract():
-    openapi_schema = get_openapi(
-        title="Powerlifting API",
-        version="1.0.0",
-        description="API for managing athletes and records",
-        routes=app.routes,
-    )
-    with open("app/contracts/openapi.json", "w") as f:
-        json.dump(openapi_schema, f, indent=2)
 # --- AUTHENTICATION ---
 
 API_KEY_NAME = "X-API-KEY"
@@ -111,7 +115,7 @@ async def delete_athlete(athlete_id: int):
     db_athletes[:] = [a for a in db_athletes if a["id"] != athlete_id]
     return {"message": "Athlete deleted successfully"}
 
-@app.post("/v1/reset", tags=["Admin"])
+@app.post("/v1/reset", tags=["Admin"], dependencies=[Depends(get_api_key)])
 async def reset_db():
     """Restore the database to the original 5 default athletes"""
     reload_defaults()

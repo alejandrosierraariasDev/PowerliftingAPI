@@ -107,12 +107,12 @@
 
  ## 🔌 Main endpoints
 
- - **GET** `/v1/athletes` — List athletes.
+ - **GET** `/v1/athletes` — List athletes. 
  - **GET** `/v1/athletes/{athlete_id}` — Get athlete by id.
  - **GET** `/v1/athletes/search` — Search athletes by name.
  - **GET** `/v1/athletes/category/{weight_class}` — Filter athletes by weight class.
- - **POST** `/v1/athletes` — Create athlete.
- - **DELETE** `/v1/athletes/{athlete_id}` — Delete athlete.
+ - **POST** `/v1/athletes` — Create athlete. (requires authentication)
+ - **DELETE** `/v1/athletes/{athlete_id}` — Delete athlete. (requires authentication)
  - **POST** `/v1/reset` — Reset data to initial state (in-memory).
  - **GET** `/health` — Health check.
 

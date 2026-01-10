@@ -25,5 +25,5 @@ class Athlete(AthleteBase):
     id: int
     records: List[Lift] = []
 
-    # Modern way to enable ORM mode/from_attributes
+
     model_config = ConfigDict(from_attributes=True)
