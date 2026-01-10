@@ -81,9 +81,26 @@ async def root():
 
 # --- QUERIES ---
 
-@app.get("/v1/athletes", response_model=List[Athlete], tags=["Athletes"])
-async def get_all_athletes():
-    return db_athletes
+from fastapi import Query
+
+
+@app.get("/v1/athletes", response_model=dict, tags=["Athletes"])
+async def get_all_athletes(
+        offset: int = Query(0, ge=0, description="Number of records to skip"),
+        limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return")
+):
+    total = len(db_athletes)
+
+    data = db_athletes[offset: offset + limit]
+
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "count": len(data),
+        "results": data
+    }
+
 
 @app.get("/v1/athletes/search", response_model=List[Athlete], tags=["Queries"])
 async def search_athlete_by_name(name: str = Query(..., description="Name or partial name of the athlete")):
