@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from fastapi.openapi.utils import get_openapi
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
+from fastapi import BackgroundTasks, Depends, HTTPException
+from sqlalchemy.orm import Session
+from .notifications import send_slack_notification
 
 # Importaciones de tu estructura profesional
 from app.database import get_db, engine, Base, reload_defaults
@@ -15,6 +18,8 @@ from app import models, schemas, auth
 from app.auth import get_current_user, create_access_token
 
 load_dotenv()
+
+
 
 # Crea las tablas en Supabase (o SQLite) al arrancar la aplicación
 models.Base.metadata.create_all(bind=engine)
@@ -66,12 +71,21 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
 
 # --- SYSTEM ---
-@app.get("/health", tags=["System"])
+@app.get("/health", tags=["Monitoring"])
 async def health_check(db: Session = Depends(get_db)):
-    # Contamos los registros directamente en la BBDD
-    count = db.query(models.Athlete).count()
-    return {"status": "healthy", "database": "connected", "records": count}
+    try:
+        # Intentamos una consulta simple a la DB
+        db.execute("SELECT 1")
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
 
+    return {
+        "status": "online",
+        "database": db_status,
+        "version": "1.0.1",
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="/docs")
@@ -123,18 +137,39 @@ async def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
     return athlete
 
 # --- ADMINISTRATION ---
-
 @app.post("/v1/athletes", response_model=schemas.Athlete, status_code=201, tags=["Admin"])
-def create_athlete(athlete: schemas.AthleteCreate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+async def create_athlete(
+        athlete: schemas.AthleteCreate,
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(get_current_user)
+):
+    # 1. Preparar el objeto
     db_athlete = models.Athlete(**athlete.model_dump())
     db.add(db_athlete)
+
     try:
+        # 2. Intentar persistir en DB
         db.commit()
         db.refresh(db_athlete)
+
+        # 3. Si la DB tuvo éxito, programamos la notificación de Slack
+        # Usamos background_tasks para que la API responda rápido sin esperar a Slack
+        msg = (
+            f"🏋️‍♂️ *¡Nuevo Atleta Registrado!*\n"
+            f"> *Nombre:* {db_athlete.name}\n"
+            f"> *Categoría:* {db_athlete.category}kg\n"
+            f"🚀 _Enviado desde PowerliftingAPI_"
+        )
+        background_tasks.add_task(send_slack_notification, msg)
+
     except Exception as e:
+        # 4. Si hay error (ej: ID duplicado o fallo de conexión), deshacemos
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Error al crear atleta: {str(e)}")
+
     return db_athlete
+
 @app.delete("/v1/athletes/{athlete_id}", tags=["Admin"])
 async def delete_athlete(
         athlete_id: int,

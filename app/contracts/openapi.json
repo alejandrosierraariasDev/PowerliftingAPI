@@ -48,7 +48,7 @@
     "/health": {
       "get": {
         "tags": [
-          "System"
+          "Monitoring"
         ],
         "summary": "Health Check",
         "operationId": "health_check_health_get",
@@ -102,9 +102,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Athletes V1 Athletes Get"
+                  "$ref": "#/components/schemas/AthletePagination"
                 }
               }
             }
@@ -456,6 +454,42 @@
           "country"
         ],
         "title": "AthleteCreate"
+      },
+      "AthletePagination": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/Athlete"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "offset",
+          "limit",
+          "count",
+          "results"
+        ],
+        "title": "AthletePagination"
       },
       "Body_login_token_post": {
         "properties": {
