@@ -1,4 +1,5 @@
 import os
+import json
 from fastapi import FastAPI, HTTPException, status, Query,Security, Depends
 from typing import List
 from app.schemas import Athlete, AthleteCreate
@@ -6,7 +7,10 @@ from app.database import db_athletes, reload_defaults
 from fastapi.responses import RedirectResponse
 from fastapi.security.api_key import APIKeyHeader
 from dotenv import load_dotenv
+from fastapi.openapi.utils import get_openapi
 load_dotenv()
+
+
 
 app = FastAPI(
     title="Powerlifting API",
@@ -27,7 +31,16 @@ It features automated nightly resets and a full CI/CD pipeline.
     version="1.2.0"
 )
 
-
+@app.on_event("startup")
+def generate_openapi_contract():
+    openapi_schema = get_openapi(
+        title="Powerlifting API",
+        version="1.0.0",
+        description="API for managing athletes and records",
+        routes=app.routes,
+    )
+    with open("app/contracts/openapi.json", "w") as f:
+        json.dump(openapi_schema, f, indent=2)
 # --- AUTHENTICATION ---
 
 API_KEY_NAME = "X-API-KEY"
@@ -83,7 +96,7 @@ async def get_athlete(athlete_id: int):
 
 # --- ADMINISTRATION ---
 
-@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"])
+@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"],dependencies=[Depends(get_api_key)])
 async def create_athlete(athlete_data: AthleteCreate):
     """Register a new athlete in the system"""
     new_id = max([a["id"] for a in db_athletes], default=0) + 1
