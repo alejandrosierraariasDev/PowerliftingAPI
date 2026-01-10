@@ -69,19 +69,52 @@
         "tags": [
           "Athletes"
         ],
-        "summary": "Get All Athletes",
-        "operationId": "get_all_athletes_v1_athletes_get",
+        "summary": "Get Athletes",
+        "operationId": "get_athletes_v1_athletes_get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Athlete"
-                  },
-                  "type": "array",
-                  "title": "Response Get All Athletes V1 Athletes Get"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Athletes V1 Athletes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -94,15 +127,20 @@
         ],
         "summary": "Create Athlete",
         "operationId": "create_athlete_v1_athletes_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AthleteCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -125,12 +163,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/v1/athletes/search": {
@@ -147,10 +180,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "Name or partial name of the athlete",
+              "description": "Name or partial name",
               "title": "Name"
             },
-            "description": "Name or partial name of the athlete"
+            "description": "Name or partial name"
           }
         ],
         "responses": {

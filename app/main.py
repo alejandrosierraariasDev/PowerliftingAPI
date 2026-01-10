@@ -1,21 +1,27 @@
 import os
 import json
-from fastapi import FastAPI, HTTPException, status, Query,Security, Depends
+from fastapi import FastAPI, HTTPException, status, Query, Depends
 from typing import List
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.schemas import Athlete, AthleteCreate
-from app.database import db_athletes, reload_defaults
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from fastapi.openapi.utils import get_openapi
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
+
+# Importaciones de tu estructura profesional
+from app.database import get_db, engine, Base, reload_defaults
+from app import models, schemas, auth
 from app.auth import get_current_user, create_access_token
 
 load_dotenv()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Crea las tablas en Supabase (o SQLite) al arrancar la aplicación
+models.Base.metadata.create_all(bind=engine)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Generación automática del contrato OpenAPI
     os.makedirs("app/contracts", exist_ok=True)
     openapi_schema = get_openapi(
         title="Powerlifting API",
@@ -32,36 +38,25 @@ app = FastAPI(
     description="""
 ### 👤 Author Information
 * **Name:** Alejandro Sierra
-* **Portfolio:** [ GitHub](https://github.com/alejandrosierraariasDev)
+* **Portfolio:** [GitHub](https://github.com/alejandrosierraariasDev)
 * **Email:** [alejandrosierraarias@gmail.com](mailto:alejandrosierraarias@gmail.com)
 
 ### 📖 About this API
-This is a specialized API for **IPF Powerlifting** athletes and their world records. 
-It features automated nightly resets and a full CI/CD pipeline.
-
-**Quick Links:**
-* [View JSON Athletes List](/v1/athletes)
----
+Now powered by **SQLAlchemy & PostgreSQL (Supabase)**.
+Features automated nightly resets and a full CI/CD pipeline.
     """,
     version="1.0.0",
     lifespan=lifespan
-
 )
 
 # --- AUTHENTICATION ---
-
 ADMIN_USER = os.getenv("ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @app.post("/token", tags=["Auth"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-
-    user = form_data.username
-    password = form_data.password
-
-    if user == ADMIN_USER and password == ADMIN_PASS:
-        access_token = create_access_token(data={"sub": user})
+    if form_data.username == ADMIN_USER and form_data.password == ADMIN_PASS:
+        access_token = create_access_token(data={"sub": form_data.username})
         return {"access_token": access_token, "token_type": "bearer"}
 
     raise HTTPException(
@@ -72,8 +67,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 # --- SYSTEM ---
 @app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "healthy", "database": "connected", "records": len(db_athletes)}
+async def health_check(db: Session = Depends(get_db)):
+    # Contamos los registros directamente en la BBDD
+    count = db.query(models.Athlete).count()
+    return {"status": "healthy", "database": "connected", "records": count}
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -81,64 +78,82 @@ async def root():
 
 # --- QUERIES ---
 
-from fastapi import Query
-
-
 @app.get("/v1/athletes", response_model=dict, tags=["Athletes"])
-async def get_all_athletes(
-        offset: int = Query(0, ge=0, description="Number of records to skip"),
-        limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return")
+def get_athletes(
+        db: Session = Depends(get_db),
+        offset: int = Query(0, ge=0),
+        limit: int = Query(10, ge=1, le=100)
 ):
-    total = len(db_athletes)
-
-    data = db_athletes[offset: offset + limit]
+    total_count = db.query(models.Athlete).count()
+    athletes = db.query(models.Athlete).offset(offset).limit(limit).all()
 
     return {
-        "total": total,
+        "total": total_count,
         "offset": offset,
         "limit": limit,
-        "count": len(data),
-        "results": data
+        "count": len(athletes),
+        "results": athletes
     }
 
-
-@app.get("/v1/athletes/search", response_model=List[Athlete], tags=["Queries"])
-async def search_athlete_by_name(name: str = Query(..., description="Name or partial name of the athlete")):
-    filtered = [a for a in db_athletes if name.lower() in a["name"].lower()]
-    if not filtered:
+@app.get("/v1/athletes/search", response_model=List[schemas.Athlete], tags=["Queries"])
+async def search_athlete_by_name(
+        name: str = Query(..., description="Name or partial name"),
+        db: Session = Depends(get_db)
+):
+    # Búsqueda dinámica en SQL usando ILIKE (no distingue mayúsculas)
+    results = db.query(models.Athlete).filter(models.Athlete.name.ilike(f"%{name}%")).all()
+    if not results:
         raise HTTPException(status_code=404, detail=f"No athlete found with name: {name}")
-    return filtered
+    return results
 
-@app.get("/v1/athletes/category/{weight_class}", response_model=List[Athlete], tags=["Queries"])
-async def get_by_weight_class(weight_class: str):
-    filtered = [a for a in db_athletes if a["category"].lower() == weight_class.lower()]
-    if not filtered:
+@app.get("/v1/athletes/category/{weight_class}", response_model=List[schemas.Athlete], tags=["Queries"])
+async def get_by_weight_class(weight_class: str, db: Session = Depends(get_db)):
+    # Filtro por categoría de peso
+    results = db.query(models.Athlete).filter(models.Athlete.weight_class == weight_class).all()
+    if not results:
         raise HTTPException(status_code=404, detail="No athletes found in that category")
-    return filtered
+    return results
 
-@app.get("/v1/athletes/{athlete_id}", response_model=Athlete, tags=["Athletes"])
-async def get_athlete(athlete_id: int):
-    athlete = next((a for a in db_athletes if a["id"] == athlete_id), None)
+@app.get("/v1/athletes/{athlete_id}", response_model=schemas.Athlete, tags=["Athletes"])
+async def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
+    athlete = db.query(models.Athlete).filter(models.Athlete.id == athlete_id).first()
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return athlete
 
 # --- ADMINISTRATION ---
 
-@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"],dependencies=[Depends(get_current_user)])
-async def create_athlete(athlete_data: AthleteCreate):
-    new_id = max([a["id"] for a in db_athletes], default=0) + 1
-    new_athlete = {**athlete_data.model_dump(), "id": new_id, "records": []}
-    db_athletes.append(new_athlete)
-    return new_athlete
+@app.post("/v1/athletes", response_model=schemas.Athlete, status_code=201, tags=["Admin"])
+def create_athlete(
+        athlete: schemas.AthleteCreate,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(get_current_user)
+):
+    db_athlete = models.Athlete(**athlete.model_dump())
+    db.add(db_athlete)
+    db.commit()
+    db.refresh(db_athlete)
+    return db_athlete
 
-@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"],dependencies=[Depends(get_current_user)])
-async def delete_athlete(athlete_id: int):
-    global db_athletes
-    db_athletes[:] = [a for a in db_athletes if a["id"] != athlete_id]
-    return {"message": "Athlete deleted successfully"}
+@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"])
+async def delete_athlete(
+        athlete_id: int,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(get_current_user)
+):
+    athlete = db.query(models.Athlete).filter(models.Athlete.id == athlete_id).first()
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
 
-@app.post("/v1/reset", tags=["Admin"],dependencies=[Depends(get_current_user)])
-async def reset_db():
-    reload_defaults()
-    return {"message": "Database successfully restored"}
+    db.delete(athlete)
+    db.commit()
+    return {"message": "Athlete deleted successfully from database"}
+
+@app.post("/v1/reset", tags=["Admin"])
+async def reset_db(
+        db: Session = Depends(get_db),
+        current_user: str = Depends(get_current_user)
+):
+    # Llamamos a la función de recarga pasándole la sesión activa
+    reload_defaults(db)
+    return {"message": "Database successfully restored in Supabase"}
