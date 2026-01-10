@@ -8,3 +8,6 @@ python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
+anyio
+psycopg2-binary
+sqlalchemy
