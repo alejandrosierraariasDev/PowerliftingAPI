@@ -87,13 +87,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     Endpoint para obtener el token.
     Usa el usuario y contraseña definidos en las variables de entorno.
     """
-    if form_data.username == ADMIN_USER and form_data.password == ADMIN_PASS:
-        access_token = create_access_token(data={"sub": form_data.username})
+    user = form_data.username
+    password = form_data.password
+
+    if user == ADMIN_USER and password == ADMIN_PASS:
+        access_token = create_access_token(data={"sub": user})
         return {"access_token": access_token, "token_type": "bearer"}
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Usuario o contraseña incorrectos",
+        detail="Credenciales incorrectas",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
