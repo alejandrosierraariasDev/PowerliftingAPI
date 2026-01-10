@@ -3,7 +3,7 @@ import os
 from fastapi.testclient import TestClient
 from app.main import app
 from dotenv import load_dotenv
-
+from app.database import db_athletes
 load_dotenv()
 client = TestClient(app)
 
@@ -24,11 +24,35 @@ def auth_headers():
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
-def test_get_all_athletes():
-    response = client.get("/v1/athletes")
-    assert response.status_code == 200
-    assert len(response.json()) == 5
+def test_get_all_athletes_pagination():
 
+    actual_total = len(db_athletes)
+    limit_value = 2
+    offset_value = 0
+    response = client.get(f"/v1/athletes?offset={offset_value}&limit={limit_value}")
+
+    # Assertions
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == actual_total
+    assert data["offset"] == offset_value
+    assert data["limit"] == limit_value
+    expected_results_count = min(actual_total, limit_value)
+    assert len(data["results"]) == expected_results_count
+    assert "count" in data
+    assert data["count"] == expected_results_count
+
+
+def test_pagination_out_of_bounds():
+    actual_total = len(db_athletes)
+    offset_value = actual_total + 1
+    response = client.get(f"/v1/athletes?offset={offset_value}&limit=10")
+
+    # Assertions
+    assert response.status_code == 200
+    data = response.json()
+    assert data["results"] == []
+    assert data["count"] == 0
 
 def test_admin_flow_with_jwt(auth_headers):
     response = client.delete("/v1/athletes/1", headers=auth_headers)
