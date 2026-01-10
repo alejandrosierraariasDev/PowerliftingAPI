@@ -78,7 +78,7 @@ async def root():
 
 # --- QUERIES ---
 
-@app.get("/v1/athletes", response_model=dict, tags=["Athletes"])
+@app.get("/v1/athletes", response_model=schemas.AthletePagination, tags=["Athletes"])
 def get_athletes(
         db: Session = Depends(get_db),
         offset: int = Query(0, ge=0),
@@ -87,12 +87,14 @@ def get_athletes(
     total_count = db.query(models.Athlete).count()
     athletes = db.query(models.Athlete).offset(offset).limit(limit).all()
 
+    # IMPORTANTE: Para evitar el error de serialización, nos aseguramos de que
+    # los objetos de SQLAlchemy se conviertan correctamente según el Schema
     return {
         "total": total_count,
         "offset": offset,
         "limit": limit,
         "count": len(athletes),
-        "results": athletes
+        "results": athletes # FastAPI usará schemas.Athlete si está bien configurado
     }
 
 @app.get("/v1/athletes/search", response_model=List[schemas.Athlete], tags=["Queries"])
@@ -108,12 +110,11 @@ async def search_athlete_by_name(
 
 @app.get("/v1/athletes/category/{weight_class}", response_model=List[schemas.Athlete], tags=["Queries"])
 async def get_by_weight_class(weight_class: str, db: Session = Depends(get_db)):
-    # Filtro por categoría de peso
-    results = db.query(models.Athlete).filter(models.Athlete.weight_class == weight_class).all()
+    # En tu modelo la columna se llama 'category', no 'weight_class'
+    results = db.query(models.Athlete).filter(models.Athlete.category == weight_class).all()
     if not results:
         raise HTTPException(status_code=404, detail="No athletes found in that category")
     return results
-
 @app.get("/v1/athletes/{athlete_id}", response_model=schemas.Athlete, tags=["Athletes"])
 async def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
     athlete = db.query(models.Athlete).filter(models.Athlete.id == athlete_id).first()
@@ -124,17 +125,16 @@ async def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
 # --- ADMINISTRATION ---
 
 @app.post("/v1/athletes", response_model=schemas.Athlete, status_code=201, tags=["Admin"])
-def create_athlete(
-        athlete: schemas.AthleteCreate,
-        db: Session = Depends(get_db),
-        current_user: str = Depends(get_current_user)
-):
+def create_athlete(athlete: schemas.AthleteCreate, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     db_athlete = models.Athlete(**athlete.model_dump())
     db.add(db_athlete)
-    db.commit()
-    db.refresh(db_athlete)
+    try:
+        db.commit()
+        db.refresh(db_athlete)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
     return db_athlete
-
 @app.delete("/v1/athletes/{athlete_id}", tags=["Admin"])
 async def delete_athlete(
         athlete_id: int,
