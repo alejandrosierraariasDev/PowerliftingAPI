@@ -12,7 +12,6 @@
           "Auth"
         ],
         "summary": "Login",
-        "description": "Endpoint para obtener el token.\nUsa el usuario y contrase\u00f1a definidos en las variables de entorno.",
         "operationId": "login_token_post",
         "requestBody": {
           "content": {
@@ -71,7 +70,6 @@
           "Athletes"
         ],
         "summary": "Get All Athletes",
-        "description": "Returns the full list of powerlifters",
         "operationId": "get_all_athletes_v1_athletes_get",
         "responses": {
           "200": {
@@ -95,7 +93,6 @@
           "Admin"
         ],
         "summary": "Create Athlete",
-        "description": "Register a new athlete in the system",
         "operationId": "create_athlete_v1_athletes_post",
         "requestBody": {
           "content": {
@@ -142,7 +139,6 @@
           "Queries"
         ],
         "summary": "Search Athlete By Name",
-        "description": "Search athletes by name or last name",
         "operationId": "search_athlete_by_name_v1_athletes_search_get",
         "parameters": [
           {
@@ -191,7 +187,6 @@
           "Queries"
         ],
         "summary": "Get By Weight Class",
-        "description": "Filter athletes by weight class (e.g., 120kg+, 83kg)",
         "operationId": "get_by_weight_class_v1_athletes_category__weight_class__get",
         "parameters": [
           {
@@ -238,7 +233,6 @@
           "Athletes"
         ],
         "summary": "Get Athlete",
-        "description": "Find a specific athlete by their unique ID",
         "operationId": "get_athlete_v1_athletes__athlete_id__get",
         "parameters": [
           {
@@ -279,7 +273,6 @@
           "Admin"
         ],
         "summary": "Delete Athlete",
-        "description": "Remove an athlete from the database",
         "operationId": "delete_athlete_v1_athletes__athlete_id__delete",
         "security": [
           {
@@ -325,7 +318,6 @@
           "Admin"
         ],
         "summary": "Reset Db",
-        "description": "Restore the database to the original 5 default athletes",
         "operationId": "reset_db_v1_reset_post",
         "responses": {
           "200": {
