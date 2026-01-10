@@ -24,6 +24,7 @@
 ## Key features
 
 - Professional API with FastAPI.
+- API-first: The OpenAPI contract guides development and serves as the single source of truth
 - Clean, typed code with Pydantic v2.
 - Database with auto-reset capability.
 - CI/CD (Continuous Integration and Deployment) in place.
@@ -108,9 +109,14 @@
 
  - **GET** `/v1/athletes` — List athletes.
  - **GET** `/v1/athletes/{athlete_id}` — Get athlete by id.
+ - **GET** `/v1/athletes/search` — Search athletes by name.
+ - **GET** `/v1/athletes/category/{weight_class}` — Filter athletes by weight class.
  - **POST** `/v1/athletes` — Create athlete.
  - **DELETE** `/v1/athletes/{athlete_id}` — Delete athlete.
  - **POST** `/v1/reset` — Reset data to initial state (in-memory).
+ - **GET** `/health` — Health check.
+
+
 
  > Default data lives in `app/database.py`. For a manual reset from CLI, `app/reset_db.py` can call a Deploy Hook (Render/Railway) defined in `RENDER_DEPLOY_HOOK`.
 
