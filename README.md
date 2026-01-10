@@ -17,14 +17,15 @@
 ## 🌐 Environments
 
  - **Dev:** Localhost.
- - **Pre:** `develop` branch deployed on Render/Railway (e.g. `https://api-pre-powerlifting.onrender.com`).
- - **Prod:** `main` branch deployed on Render/Railway (e.g. `https://api-powerlifting.onrender.com`).
+ - **Pre:** `dev` branch deployed on Render/Railway (e.g. `https://api-pre-powerlifting.onrender.com`).
+ - **Prod:** `main` branch deployed on Render/Railway (e.g. `https://api-pro-powerlifting.onrender.com`).
 
  Configure environment variables on each platform (e.g. `RENDER_DEPLOY_HOOK`).
 ## Key features
 
 - Professional API with FastAPI.
 - API-first: The OpenAPI contract guides development and serves as the single source of truth
+- Sistema de autenticación: requerido para crear y borrar atletas.
 - Clean, typed code with Pydantic v2.
 - Database with auto-reset capability.
 - CI/CD (Continuous Integration and Deployment) in place.
@@ -130,6 +131,8 @@
  │  ├─ main.py          # FastAPI routes
  │  ├─ schemas.py       # Pydantic models
  │  ├─ database.py      # Default in-memory data
+ │  ├─ auth.py          # JWT auth (token creation and validation)
+ │  ├─ contracts/       # Exported OpenAPI contract (openapi.json)
  │  └─ reset_db.py      # Script to request reset on hosting
  ├─ tests/
  │  └─ test_main.py     # Endpoint tests
