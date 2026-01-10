@@ -83,7 +83,7 @@ async def get_athlete(athlete_id: int):
 
 # --- ADMINISTRATION ---
 
-@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"])
+@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"],dependencies=[Depends(get_api_key)])
 async def create_athlete(athlete_data: AthleteCreate):
     """Register a new athlete in the system"""
     new_id = max([a["id"] for a in db_athletes], default=0) + 1

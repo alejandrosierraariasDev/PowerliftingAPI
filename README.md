@@ -14,6 +14,13 @@
 
  ![Swagger UI](assets/swagger.png)
 
+## 🌐 Environments
+
+ - **Dev:** Localhost.
+ - **Pre:** `develop` branch deployed on Render/Railway (e.g. `https://api-pre-powerlifting.onrender.com`).
+ - **Prod:** `main` branch deployed on Render/Railway (e.g. `https://api-powerlifting.onrender.com`).
+
+ Configure environment variables on each platform (e.g. `RENDER_DEPLOY_HOOK`).
 ## Key features
 
 - Professional API with FastAPI.
@@ -40,13 +47,7 @@
 
  ---
 
- ## 🌐 Environments
-
- - **Dev:** Localhost.
- - **Pre:** `develop` branch deployed on Render/Railway (e.g. `https://api-pre-powerlifting.onrender.com`).
- - **Prod:** `main` branch deployed on Render/Railway (e.g. `https://api-powerlifting.onrender.com`).
-
- Configure environment variables on each platform (e.g. `RENDER_DEPLOY_HOOK`).
+ 
 
  ---
 
