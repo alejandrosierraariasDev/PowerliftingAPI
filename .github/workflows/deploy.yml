@@ -2,7 +2,7 @@ name: Powerlifting API CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
   schedule:
     - cron: '0 0 * * *' # Reset nightly at 12 AM
   workflow_dispatch: # Allows manual trigger
@@ -41,8 +41,8 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'schedule'
 
     steps:
-      - name: Deploy to PRE-PROD (Develop branch or Schedule)
-        if: github.ref == 'refs/heads/develop' || github.event_name == 'schedule'
+      - name: Deploy to PRE-PROD (Dev branch or Schedule)
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'schedule'
         run: curl -s ${{ secrets.RENDER_DEPLOY_HOOK_PRE }} > /dev/null
 
       - name: Deploy to PROD (Main branch)

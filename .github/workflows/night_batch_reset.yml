@@ -1,7 +1,7 @@
 name: Nightly Reset
 on:
   schedule:
-    - cron: '0 0 * * *' # 12 AM cada noche
+    - cron: '0 0 * * *' # 12 AM every night
   workflow_dispatch:
 
 jobs:
