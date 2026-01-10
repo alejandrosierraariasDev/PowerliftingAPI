@@ -1,7 +1,9 @@
 import os
 import json
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException, status, Query,Security, Depends
 from typing import List
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.schemas import Athlete, AthleteCreate
 from app.database import db_athletes, reload_defaults
 from fastapi.responses import RedirectResponse
@@ -9,13 +11,14 @@ from fastapi.security.api_key import APIKeyHeader
 from dotenv import load_dotenv
 from fastapi.openapi.utils import get_openapi
 from contextlib import asynccontextmanager
+from jose import jwt, JWTError
 
 load_dotenv()
 
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    os.makedirs("app/contracts", exist_ok=True)
     openapi_schema = get_openapi(
         title="Powerlifting API",
         version="1.0.0",
@@ -42,20 +45,59 @@ It features automated nightly resets and a full CI/CD pipeline.
 * [View JSON Athletes List](/v1/athletes)
 ---
     """,
-    version="1.2.0"
+    version="1.0.0",
+    lifespan=lifespan
+
 )
 
 # --- AUTHENTICATION ---
+SECRET_KEY = os.getenv("JWT_SECRET", "dev_secret_key_123")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080 # 1 week
 
-API_KEY_NAME = "X-API-KEY"
-API_KEY = os.getenv("ADMIN_API_KEY", "dev_key")
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
-async def get_api_key(api_key: str = Security(api_key_header)):
-    if api_key == API_KEY:
-        return api_key
+ADMIN_USER = os.getenv("ADMIN_USERNAME")
+ADMIN_PASS = os.getenv("ADMIN_PASSWORD")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token inválido o expirado",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        return username
+    except JWTError:
+        raise credentials_exception
+
+
+@app.post("/token", tags=["Auth"])
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Endpoint para obtener el token.
+    Usa el usuario y contraseña definidos en las variables de entorno.
+    """
+    user = form_data.username
+    password = form_data.password
+
+    if user == ADMIN_USER and password == ADMIN_PASS:
+        access_token = create_access_token(data={"sub": user})
+        return {"access_token": access_token, "token_type": "bearer"}
+
     raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Acceso denegado: API Key inválida"
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Credenciales incorrectas",
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
 # --- SYSTEM ---
@@ -100,7 +142,7 @@ async def get_athlete(athlete_id: int):
 
 # --- ADMINISTRATION ---
 
-@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"],dependencies=[Depends(get_api_key)])
+@app.post("/v1/athletes", response_model=Athlete, status_code=201, tags=["Admin"],dependencies=[Depends(get_current_user)])
 async def create_athlete(athlete_data: AthleteCreate):
     """Register a new athlete in the system"""
     new_id = max([a["id"] for a in db_athletes], default=0) + 1
@@ -108,14 +150,14 @@ async def create_athlete(athlete_data: AthleteCreate):
     db_athletes.append(new_athlete)
     return new_athlete
 
-@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"],dependencies=[Depends(get_api_key)])
+@app.delete("/v1/athletes/{athlete_id}", tags=["Admin"],dependencies=[Depends(get_current_user)])
 async def delete_athlete(athlete_id: int):
     """Remove an athlete from the database"""
     global db_athletes
     db_athletes[:] = [a for a in db_athletes if a["id"] != athlete_id]
     return {"message": "Athlete deleted successfully"}
 
-@app.post("/v1/reset", tags=["Admin"], dependencies=[Depends(get_api_key)])
+@app.post("/v1/reset", tags=["Admin"],dependencies=[Depends(get_current_user)])
 async def reset_db():
     """Restore the database to the original 5 default athletes"""
     reload_defaults()

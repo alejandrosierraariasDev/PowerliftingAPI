@@ -25,6 +25,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Pytest
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         # We set PYTHONPATH so it finds the 'app' folder correctly
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
